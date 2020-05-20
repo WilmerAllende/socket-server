@@ -1,9 +1,19 @@
 import { Socket } from "socket.io";
 import socketIO from "socket.io";
+import { UsuariosLista } from "../classes/usuarios-lista";
+import { Usuario } from "../classes/usuario";
+
+export const UsuariosConectados = new UsuariosLista();
+
+export const conectarCliente = (cliente: Socket) => {
+  const usuario = new Usuario(cliente.id);
+  UsuariosConectados.agregar(usuario);
+};
 
 export const desconectar = (cliente: Socket) => {
   cliente.on("disconnect", () => {
     console.log("Cliente desconectado");
+    UsuariosConectados.borrarUsuario(cliente.id);
   });
 };
 
@@ -13,4 +23,20 @@ export const mensaje = (cliente: Socket, io: socketIO.Server) => {
     console.log("Mensaje recibido: ", payload);
     io.emit("mensaje-nuevo", payload);
   });
+};
+
+//Configurar usuario - login
+export const configurarUsuario = (cliente: Socket, io: socketIO.Server) => {
+  cliente.on(
+    "configurar-usuario",
+    (payload: { nombre: string }, callback: Function) => {
+      //console.log("usuario configurado recibido: ", payload);
+      UsuariosConectados.actualizarNombre(cliente.id, payload.nombre);
+      //io.emit("mensaje-nuevo", payload);
+      callback({
+        ok: true,
+        mensaje: `Usuario ${payload.nombre} configurado`,
+      });
+    }
+  );
 };
